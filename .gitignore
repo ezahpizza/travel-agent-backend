@@ -11,3 +11,4 @@ agent/
 .env
 samp.txt
 tree.txt
+api_endpoints.txt

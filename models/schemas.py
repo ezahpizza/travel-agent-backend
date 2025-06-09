@@ -76,6 +76,7 @@ class HotelRestaurantRequest(BaseModel):
     theme: str = Field(..., description="Travel theme")
     activity_preferences: str = Field(..., description="Activity preferences")
     hotel_rating: HotelRating
+    budget: str
 
 class HotelInfo(BaseModel):
     name: str
@@ -91,10 +92,6 @@ class RestaurantInfo(BaseModel):
     price_range: Optional[str] = None
     rating: Optional[float] = None
     description: Optional[str] = None
-
-class HotelRestaurantResponse(BaseModel):
-    hotels: List[HotelInfo]
-    restaurants: List[RestaurantInfo]
 
 # Itinerary Models
 class ItineraryRequest(BaseModel):

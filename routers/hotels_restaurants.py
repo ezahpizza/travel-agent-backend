@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 import logging
 from datetime import datetime, UTC
 
-from models.schemas import HotelRestaurantRequest, HotelRestaurantResponse, APIResponse
+from models.schemas import HotelRestaurantRequest, APIResponse
 from services.hotels_restaurants_service import HotelsRestaurantsService
 from db.hotels_restaurants_crud import (
     save_hotels_restaurants_search, 
@@ -43,7 +43,7 @@ async def search_hotels_restaurants(request: HotelRestaurantRequest):
             theme=request.theme,
             activity_preferences=request.activity_preferences,
             hotel_rating=request.hotel_rating.value if hasattr(request.hotel_rating, "value") else str(request.hotel_rating),
-            budget="Standard"  # Or use request.budget if available
+            budget=request.budget 
         )
         
         if not search_results:

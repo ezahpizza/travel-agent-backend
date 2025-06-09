@@ -44,7 +44,7 @@ class HotelsRestaurantsService:
         theme: str = "General",
         activity_preferences: str = "Sightseeing and local experiences",
         hotel_rating: str = "Any",
-        budget: str = "Standard"
+        budget: str = "Any"
     ) -> Dict[str, Any]:
         """
         Search for hotels and restaurants using Gemini agent with SerpAPI tools

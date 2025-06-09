@@ -6,5 +6,8 @@ models/__pycache__/
 schemas/__pycache__/
 services/__pycache__/
 
+back/
 agent/
 .env
+samp.txt
+tree.txt

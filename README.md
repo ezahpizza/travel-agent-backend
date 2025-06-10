@@ -13,8 +13,8 @@ This is a production-ready FastAPI backend for an AI-powered travel planning app
 ## Technology Stack
 - Python 3.10+
 - FastAPI
-- MongoDB (async, no ORM/ODM)
-- SerpAPI (for web search)
+- MongoDB
+- Serper(for web search)
 - Google Gemini (for LLM-powered research and planning)
 - Pydantic (for data validation)
 

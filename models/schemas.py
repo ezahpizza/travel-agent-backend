@@ -15,9 +15,9 @@ class FlightClass(str, Enum):
 
 class HotelRating(str, Enum):
     ANY = "Any"
-    THREE_STAR = "3⭐"
-    FOUR_STAR = "4⭐"
-    FIVE_STAR = "5⭐"
+    THREE_STAR = "3"
+    FOUR_STAR = "4"
+    FIVE_STAR = "5"
 
 # Flight Models
 class FlightSearchRequest(BaseModel):

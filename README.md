@@ -37,15 +37,23 @@ This is a production-ready FastAPI backend for an AI-powered travel planning app
 - **POST `/flights/search`**
   - Search for flights using SerpAPI and return the top 3 cheapest options.
   - **Request Body:**
-    - `source` (str): Departure airport IATA code
-    - `destination` (str): Arrival airport IATA code
-    - `departure_date` (date): Departure date
-    - `return_date` (date): Return date
-  - **Response:** List of flight options with airline, price, duration, etc.
+    - `source` (str): Departure airport IATA code (3-letter code)
+    - `destination` (str): Arrival airport IATA code (3-letter code)
+    - `departure_date` (date): Departure date (YYYY-MM-DD)
+    - `return_date` (date): Return date (YYYY-MM-DD)
+    - `userid` (str): User ID from Clerk authentication
+  - **Response:**
+    - List of flight options with airline, price, duration, etc.
 
 - **GET `/flights/search/history`**
-  - Get recent flight search history.
-  - **Response:** List of recent flight search queries and results.
+  - Get recent flight search history for a user.
+  - **Query Parameters:**
+    - `userid` (str): User ID from Clerk authentication
+    - `limit` (int): Number of records to return (default: 10)
+  - **Response:**
+    - List of recent flight search queries and results.
+
+---
 
 ### Research (`/research`)
 
@@ -55,17 +63,25 @@ This is a production-ready FastAPI backend for an AI-powered travel planning app
     - `destination` (str): City or country
     - `theme` (str): Travel theme (e.g., adventure, culture)
     - `activities` (str): Preferred activities
-    - `num_days` (int): Trip duration
+    - `num_days` (int): Trip duration in days
     - `budget` (enum): Economy, Standard, Luxury
     - `flight_class` (enum): Economy, Business, First Class
-    - `hotel_rating` (enum): Any, 3⭐, 4⭐, 5⭐
+    - `hotel_rating` (enum): Any, 3, 4, 5
     - `visa_required` (bool)
     - `insurance_required` (bool)
-  - **Response:** Research summary, attractions, recommendations, safety tips.
+    - `userid` (str): User ID from Clerk authentication
+  - **Response:**
+    - Research summary, attractions, recommendations, safety tips.
 
 - **GET `/research/destination/{destination}/history`**
-  - Get research history for a specific destination.
-  - **Response:** List of previous research queries and results for the destination.
+  - Get research history for a specific destination and user.
+  - **Query Parameters:**
+    - `userid` (str): User ID from Clerk authentication
+    - `limit` (int): Number of records to return (default: 5)
+  - **Response:**
+    - List of previous research queries and results for the destination.
+
+---
 
 ### Hotels & Restaurants (`/hotels-restaurants`)
 
@@ -75,42 +91,60 @@ This is a production-ready FastAPI backend for an AI-powered travel planning app
     - `destination` (str): City or country
     - `theme` (str): Travel theme
     - `activity_preferences` (str): Activity preferences
-    - `hotel_rating` (enum): Any, 3⭐, 4⭐, 5⭐
-  - **Response:** List of recommended hotels and restaurants with details.
+    - `hotel_rating` (enum): Any, 3, 4, 5
+    - `budget` (str): Budget level
+    - `userid` (str): User ID from Clerk authentication
+  - **Response:**
+    - List of recommended hotels and restaurants with details.
 
 - **GET `/hotels-restaurants/destination/{destination}/history`**
-  - Get search history for hotels and restaurants by destination.
-  - **Response:** List of previous hotel/restaurant searches for the destination.
+  - Get search history for hotels and restaurants by destination and user.
+  - **Query Parameters:**
+    - `userid` (str): User ID from Clerk authentication
+    - `limit` (int): Number of records to return (default: 5)
+  - **Response:**
+    - List of previous hotel/restaurant searches for the destination.
+
+---
 
 ### Itinerary (`/itinerary`)
 
 - **POST `/itinerary/generate`**
   - Generate a complete travel itinerary using Gemini agent.
   - **Request Body:**
-    - `destination` (str)
-    - `theme` (str)
-    - `activities` (str)
-    - `num_days` (int)
-    - `budget` (enum)
-    - `flight_class` (enum)
-    - `hotel_rating` (enum)
+    - `destination` (str): City or country
+    - `theme` (str): Travel theme
+    - `activities` (str): Preferred activities
+    - `num_days` (int): Trip duration in days
+    - `budget` (enum): Economy, Standard, Luxury
+    - `flight_class` (enum): Economy, Business, First Class
+    - `hotel_rating` (enum): Any, 3, 4, 5
     - `visa_required` (bool)
     - `insurance_required` (bool)
-    - `research_summary` (str)
-    - `selected_flights` (list)
-    - `hotel_restaurant_summary` (str)
-  - **Response:** Detailed itinerary with daily plans, activities, tips, and cost estimates.
+    - `userid` (str): User ID from Clerk authentication
+  - **Response:**
+    - Detailed itinerary with daily plans, activities, tips, and cost estimates.
 
 - **GET `/itinerary/destination/{destination}`**
   - Get itineraries for a specific destination with pagination.
   - **Query Parameters:**
     - `limit` (int): Number of results to return (default: 10)
     - `offset` (int): Number of results to skip (default: 0)
-  - **Response:** List of itineraries for the destination.
+  - **Response:**
+    - List of itineraries for the destination.
 
 - **GET `/itinerary/{itinerary_id}`**
   - Get a specific itinerary by its ID.
-  - **Response:** The full itinerary details.
+  - **Response:**
+    - The full itinerary details.
+
+- **GET `/itinerary/history`**
+  - Get recent itinerary history for a specific user.
+  - **Query Parameters:**
+    - `userid` (str): User ID from Clerk authentication
+    - `limit` (int): Number of records to return (default: 10)
+  - **Response:**
+    - List of recent itineraries for the user.
 
 ## Error Handling
 - All endpoints return a consistent JSON structure:

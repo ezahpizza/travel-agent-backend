@@ -62,42 +62,6 @@ async def get_hotels_restaurants_by_params(destination: str, theme: str, hotel_r
         logger.error(f"Error retrieving hotels & restaurants search: {e}")
         return None
 
-async def get_hotels_restaurants_by_destination(destination: str, limit: int = 5) -> List[Dict[str, Any]]:
-    """Get hotels and restaurants searches for a specific destination"""
-    try:
-        db = get_db()
-        collection = db.hotels_restaurants
-        
-        query = {"destination": destination.title()}
-        
-        cursor = collection.find(
-            query,
-            {
-                "destination": 1,
-                "theme": 1,
-                "hotel_rating": 1,
-                "search_timestamp": 1,
-                "hotels": 1,
-                "restaurants": 1,
-                "metadata.total_hotels": 1,
-                "metadata.total_restaurants": 1
-            }
-        ).sort("search_timestamp", -1).limit(limit)
-        
-        results = []
-        for doc in cursor:
-            doc['_id'] = str(doc['_id'])
-            results.append(doc)
-            
-        return results
-        
-    except PyMongoError as e:
-        logger.error(f"Database error retrieving hotels & restaurants by destination: {e}")
-        return []
-    except Exception as e:
-        logger.error(f"Error retrieving hotels & restaurants by destination: {e}")
-        return []
-
 async def get_recent_hotels_restaurants_searches(limit: int = 10) -> List[Dict[str, Any]]:
     """Get recent hotels and restaurants searches for history"""
     try:
@@ -130,34 +94,6 @@ async def get_recent_hotels_restaurants_searches(limit: int = 10) -> List[Dict[s
     except Exception as e:
         logger.error(f"Error retrieving hotels & restaurants history: {e}")
         return []
-
-async def update_hotels_restaurants_search(search_id: str, update_data: Dict[str, Any]) -> bool:
-    """Update an existing hotels and restaurants search record"""
-    try:
-        db = get_db()
-        collection = db.hotels_restaurants
-        
-        # Add updated timestamp
-        update_data["updated_timestamp"] = datetime.now(UTC).isoformat()
-        
-        result = collection.update_one(
-            {"_id": search_id},
-            {"$set": update_data}
-        )
-        
-        if result.modified_count > 0:
-            logger.info(f"Hotels & restaurants search updated: {search_id}")
-            return True
-        else:
-            logger.warning(f"No hotels & restaurants search found to update: {search_id}")
-            return False
-            
-    except PyMongoError as e:
-        logger.error(f"Database error updating hotels & restaurants search: {e}")
-        return False
-    except Exception as e:
-        logger.error(f"Error updating hotels & restaurants search: {e}")
-        return False
 
 async def delete_hotels_restaurants_search(search_id: str) -> bool:
     """Delete a hotels and restaurants search record"""

@@ -29,24 +29,6 @@ async def save_itinerary(itinerary_data: Dict[str, Any]) -> str:
         log_exception(logger, "Error saving itinerary", e)
         raise
 
-async def get_itinerary_by_id(itinerary_id: str) -> Optional[Dict[str, Any]]:
-    """Get itinerary by ID"""
-    try:
-        db = get_db()
-        collection = db.itineraries
-        result = collection.find_one({"_id": itinerary_id})
-        if result:
-            result['_id'] = str(result['_id'])
-            logger.info(f"Retrieved itinerary: {itinerary_id}")
-            return result
-        return None
-    except PyMongoError as e:
-        log_exception(logger, "Database error retrieving itinerary", e)
-        return None
-    except Exception as e:
-        log_exception(logger, "Error retrieving itinerary", e)
-        return None
-
 async def get_itineraries_by_params(destination: str, theme: str, num_days: int,
                                   userid: str, hours_threshold: int = 24) -> Optional[Dict[str, Any]]:
     """Get cached itinerary if recent enough"""
@@ -146,68 +128,6 @@ async def get_recent_itineraries_by_user(userid: str, limit: int = 10) -> List[D
     except Exception as e:
         logger.error(f"Error retrieving user itineraries: {e}")
         return []
-
-async def get_recent_itineraries(limit: int = 10) -> List[Dict[str, Any]]:
-    """Get recent itineraries"""
-    try:
-        db = get_db()
-        collection = db.itineraries
-        
-        cursor = collection.find(
-            {},
-            {
-                "destination": 1,
-                "theme": 1,
-                "num_days": 1,
-                "budget": 1,
-                "flight_class": 1,
-                "hotel_rating": 1,
-                "created_timestamp": 1,
-                "metadata.total_activities": 1,
-                "metadata.estimated_cost": 1
-            }
-        ).sort("created_timestamp", -1).limit(limit)
-        
-        results = []
-        for doc in cursor:
-            doc['_id'] = str(doc['_id'])
-            results.append(doc)
-            
-        return results
-        
-    except PyMongoError as e:
-        logger.error(f"Database error retrieving recent itineraries: {e}")
-        return []
-    except Exception as e:
-        logger.error(f"Error retrieving recent itineraries: {e}")
-        return []
-
-async def update_itinerary(itinerary_id: str, update_data: Dict[str, Any]) -> bool:
-    """Update an existing itinerary"""
-    try:
-        db = get_db()
-        collection = db.itineraries
-        
-        update_data["updated_timestamp"] = datetime.now(UTC).isoformat()
-        
-        result = collection.update_one(
-            {"_id": itinerary_id},
-            {"$set": update_data}
-        )
-        
-        if result.modified_count > 0:
-            logger.info(f"Itinerary updated: {itinerary_id}")
-            return True
-        else:
-            logger.warning(f"No itinerary found to update: {itinerary_id}")
-            return False
-            
-    except PyMongoError as e:
-        logger.error(f"Database error updating itinerary: {e}")
-        return False
-    except Exception as e:
-        logger.error(f"Error updating itinerary: {e}")
-        return False
 
 async def delete_itinerary(itinerary_id: str) -> bool:
     """Delete an itinerary"""

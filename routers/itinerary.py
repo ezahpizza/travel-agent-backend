@@ -56,7 +56,6 @@ async def generate_itinerary(request: ItineraryRequest):
             )
         
         # Save to database
-        # Add userid to itinerary_record:
         itinerary_record = {
             "destination": request.destination,
             "theme": request.theme,
@@ -103,31 +102,6 @@ async def get_itineraries_by_destination(destination: str, limit: int = 10, offs
         import traceback
         logger.error(f"Error retrieving itineraries: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail="Failed to retrieve itineraries")
-
-@router.get("/{itinerary_id}")
-async def get_itinerary_by_id(itinerary_id: str):
-    """
-    Get specific itinerary by ID
-    """
-    try:
-        from db.itinerary_crud import get_itinerary_by_id
-        
-        itinerary = await get_itinerary_by_id(itinerary_id)
-        
-        if not itinerary:
-            raise HTTPException(status_code=404, detail="Itinerary not found")
-        
-        return APIResponse(
-            success=True,
-            message="Itinerary retrieved successfully",
-            data=itinerary
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error retrieving itinerary: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve itinerary")
     
 @router.get("/history")
 async def get_user_itinerary_history(

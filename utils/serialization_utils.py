@@ -1,7 +1,6 @@
 import enum
 from typing import Any
 from bson import ObjectId
-import logging
 import traceback
 
 # Utility to convert Enum to str

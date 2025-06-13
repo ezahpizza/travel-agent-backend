@@ -2,9 +2,9 @@ from fastapi import APIRouter, HTTPException
 import logging
 from datetime import datetime, UTC
 
-from models.schemas import ResearchRequest, ResearchResponse, APIResponse
+from models.schemas import ResearchRequest, APIResponse
 from services.research_service import ResearchService
-from db.research_crud import save_research_result, get_research_by_destination
+from db.research_crud import save_research_result, get_research_by_destination, get_research_history_by_destination
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -77,8 +77,6 @@ async def get_research_history(destination: str, limit: int = 5):
     Get research history for a specific destination
     """
     try:
-        from db.research_crud import get_research_history_by_destination
-        
         history = await get_research_history_by_destination(destination, limit)
         
         return APIResponse(

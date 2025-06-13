@@ -2,6 +2,8 @@ import logging
 from datetime import datetime, timedelta, UTC
 from typing import List, Dict, Any, Optional
 from pymongo.errors import PyMongoError
+from bson import ObjectId
+from bson.errors import InvalidId
 
 from db.connection import get_db
 from utils.serialization_utils import serialize_for_mongo, log_exception
@@ -14,10 +16,8 @@ async def save_itinerary(itinerary_data: Dict[str, Any]) -> str:
         db = get_db()
         collection = db.itineraries
 
-        # Ensure all datetime fields are ISO strings
         itinerary_data["created_timestamp"] = datetime.now(UTC).isoformat()
         itinerary_data["userid"] = str(itinerary_data.get("userid", ""))
-        # Serialize all data for MongoDB
         mongo_data = serialize_for_mongo(itinerary_data)
         result = collection.insert_one(mongo_data)
         logger.info(f"Itinerary saved with ID: {result.inserted_id}")
@@ -60,40 +60,6 @@ async def get_itineraries_by_params(destination: str, theme: str, num_days: int,
         logger.error(f"Error retrieving cached itinerary: {e}")
         return None
 
-async def get_itineraries_by_destination(destination: str, limit: int = 10) -> List[Dict[str, Any]]:
-    """Get itineraries for a specific destination"""
-    try:
-        db = get_db()
-        collection = db.itineraries
-        # Input validation and sanitization
-        if not isinstance(destination, str):
-            logger.error("Invalid input type for destination")
-            return []
-        query = {"destination": destination.title()}
-        cursor = collection.find(
-            query,
-            {
-                "destination": 1,
-                "theme": 1,
-                "num_days": 1,
-                "budget": 1,
-                "created_timestamp": 1,
-                "metadata.total_activities": 1,
-                "metadata.estimated_cost": 1
-            }
-        ).sort("created_timestamp", -1).limit(limit)
-        results = []
-        for doc in cursor:
-            doc['_id'] = str(doc['_id'])
-            results.append(doc)
-        return results
-    except PyMongoError as e:
-        logger.error(f"Database error retrieving itineraries by destination: {e}")
-        return []
-    except Exception as e:
-        logger.error(f"Error retrieving itineraries by destination: {e}")
-        return []
-
 async def get_recent_itineraries_by_user(userid: str, limit: int = 10) -> List[Dict[str, Any]]:
     """Get recent itineraries for a specific user"""
     try:
@@ -102,17 +68,7 @@ async def get_recent_itineraries_by_user(userid: str, limit: int = 10) -> List[D
         
         cursor = collection.find(
             {"userid": str(userid)},
-            {
-                "destination": 1,
-                "theme": 1,
-                "num_days": 1,
-                "budget": 1,
-                "flight_class": 1,
-                "hotel_rating": 1,
-                "created_timestamp": 1,
-                "metadata.total_activities": 1,
-                "metadata.estimated_cost": 1
-            }
+            {"created_timestamp": 1}
         ).sort("created_timestamp", -1).limit(limit)
         
         results = []
@@ -129,13 +85,54 @@ async def get_recent_itineraries_by_user(userid: str, limit: int = 10) -> List[D
         logger.error(f"Error retrieving user itineraries: {e}")
         return []
 
-async def delete_itinerary(itinerary_id: str) -> bool:
+async def get_itinerary_by_id(itinerary_id: str, userid: str) -> Optional[Dict[str, Any]]:
+    """Get a specific itinerary by ID and user ID"""
+    try:
+        db = get_db()
+        collection = db.itineraries
+        
+        # Convert string ID to ObjectId for MongoDB query
+        try:
+            object_id = ObjectId(itinerary_id)
+        except InvalidId:
+            logger.error(f"Invalid itinerary ID format: {itinerary_id}")
+            return None
+            
+        result = collection.find_one({
+            "_id": object_id,
+            "userid": str(userid)
+        })
+        
+        if result:
+            result['_id'] = str(result['_id'])
+            logger.info(f"Found itinerary {itinerary_id} for user {userid}")
+            return result
+        return None
+        
+    except PyMongoError as e:
+        logger.error(f"Database error retrieving itinerary {itinerary_id}: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Error retrieving itinerary {itinerary_id}: {e}")
+        return None
+    
+async def delete_itinerary(itinerary_id: str, userid: str) -> bool:
     """Delete an itinerary"""
     try:
         db = get_db()
         collection = db.itineraries
         
-        result = collection.delete_one({"_id": itinerary_id})
+        # Convert string ID to ObjectId
+        try:
+            object_id = ObjectId(itinerary_id)
+        except InvalidId:
+            logger.error(f"Invalid itinerary ID format: {itinerary_id}")
+            return False
+        
+        result = collection.delete_one({
+            "_id": object_id,
+            "userid": str(userid)
+        })
         
         if result.deleted_count > 0:
             logger.info(f"Itinerary deleted: {itinerary_id}")
@@ -150,48 +147,6 @@ async def delete_itinerary(itinerary_id: str) -> bool:
     except Exception as e:
         logger.error(f"Error deleting itinerary: {e}")
         return False
-
-async def get_itineraries_by_user_preferences(theme: str = None, budget: str = None, 
-                                            num_days: int = None, limit: int = 20) -> List[Dict[str, Any]]:
-    """Get itineraries filtered by user preferences"""
-    try:
-        db = get_db()
-        collection = db.itineraries
-        
-        query = {}
-        if theme:
-            query["theme"] = theme
-        if budget:
-            query["budget"] = budget
-        if num_days:
-            query["num_days"] = num_days
-        
-        cursor = collection.find(
-            query,
-            {
-                "destination": 1,
-                "theme": 1,
-                "num_days": 1,
-                "budget": 1,
-                "activities": 1,
-                "created_timestamp": 1,
-                "metadata": 1
-            }
-        ).sort("created_timestamp", -1).limit(limit)
-        
-        results = []
-        for doc in cursor:
-            doc['_id'] = str(doc['_id'])
-            results.append(doc)
-            
-        return results
-        
-    except PyMongoError as e:
-        logger.error(f"Database error filtering itineraries: {e}")
-        return []
-    except Exception as e:
-        logger.error(f"Error filtering itineraries: {e}")
-        return []
 
 async def delete_old_itineraries(days_old: int = 90) -> int:
     """Delete itineraries older than specified days"""

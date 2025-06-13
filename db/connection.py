@@ -31,8 +31,6 @@ async def init_db():
         logger.error(f"Database initialization error: {e}")
         raise
 
-import os
-
 def get_db():
     """Return dummy db for testing or actual db if set."""
     if os.getenv("ENV") == "test":
@@ -52,16 +50,30 @@ def get_db():
                 return []
 
         class DummyCollection:
-            async def find_one(self, *args, **kwargs):
+            def find_one(self, *args, **kwargs):
                 return None
 
             def find(self, *args, **kwargs):
                 return DummyCursor()
 
-            async def insert_one(self, *args, **kwargs):
+            def insert_one(self, *args, **kwargs):
                 return DummyInsertResult()
 
-            async def update_one(self, *args, **kwargs):
+            def update_one(self, *args, **kwargs):
+                return None
+
+            def delete_one(self, *args, **kwargs):
+                class DummyDeleteResult:
+                    deleted_count = 1
+                return DummyDeleteResult()
+
+            def count_documents(self, *args, **kwargs):
+                return 0
+
+            def aggregate(self, *args, **kwargs):
+                return []
+
+            def create_index(self, *args, **kwargs):
                 return None
 
         class DummyDB:

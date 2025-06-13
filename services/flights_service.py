@@ -1,12 +1,11 @@
 import os
+import re
 import logging
 from datetime import date, datetime, UTC
 from typing import Dict, List, Any, Optional
 from agno.agent import Agent
 from agno.tools.serpapi import SerpApiTools
 from agno.models.google import Gemini
-
-from utils.date_utils import format_datetime
 
 logger = logging.getLogger(__name__)
 
@@ -310,7 +309,6 @@ class FlightService:
 
     def _extract_price(self, text: str) -> Optional[str]:
         """Extract price from text"""
-        import re
         
         # Look for INR amounts
         price_patterns = [
@@ -330,8 +328,6 @@ class FlightService:
 
     def _extract_time(self, text: str) -> str:
         """Extract time from text"""
-        import re
-        
         # Look for time patterns
         time_pattern = r'\d{1,2}:\d{2}(?:\s*[AaPp][Mm])?'
         match = re.search(time_pattern, text)
@@ -343,8 +339,6 @@ class FlightService:
 
     def _extract_duration(self, text: str) -> Optional[str]:
         """Extract duration from text"""
-        import re
-        
         # Look for duration patterns
         duration_patterns = [
             r'\d+h\s*\d+m',
@@ -367,7 +361,6 @@ class FlightService:
             if not price_str or price_str == "Not Available":
                 return float('inf')
             
-            import re
             numbers = re.findall(r'[\d,]+', str(price_str))
             if numbers:
                 try:
@@ -413,7 +406,6 @@ class FlightService:
             if not price_str or price_str == "Not Available":
                 return float('inf')
             
-            import re
             numbers = re.findall(r'[\d,]+', str(price_str))
             if numbers:
                 return float(numbers[0].replace(',', ''))

@@ -1,10 +1,10 @@
 import os
+import re
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from agno.agent import Agent
 from agno.models.google import Gemini
 from datetime import datetime, UTC
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -314,7 +314,6 @@ class ItineraryService:
 
     def _extract_time_from_line(self, line: str) -> str:
         """Extract time information from a line"""
-        import re
         time_pattern = r'\b(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)|\d{1,2}\s*(?:AM|PM|am|pm))\b'
         match = re.search(time_pattern, line)
         return match.group(1) if match else ""

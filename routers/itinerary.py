@@ -2,9 +2,9 @@ from fastapi import APIRouter, HTTPException, Query
 import logging
 from datetime import datetime, UTC
 
-from models.schemas import ItineraryRequest, ItineraryResponse, APIResponse
+from models.schemas import ItineraryRequest, APIResponse
 from services.itinerary_service import ItineraryService
-from db.itinerary_crud import save_itinerary, get_itineraries_by_params
+from db.itinerary_crud import save_itinerary, get_itineraries_by_params, get_recent_itineraries_by_user, get_itinerary_by_id, delete_itinerary
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -84,25 +84,6 @@ async def generate_itinerary(request: ItineraryRequest):
         logger.error(f"Itinerary generation error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Itinerary generation failed: {str(e)}")
 
-@router.get("/destination/{destination}")
-async def get_itineraries_by_destination(destination: str, limit: int = 10, offset: int = 0):
-    """
-    Get itineraries for a specific destination with pagination
-    """
-    try:
-        from db.itinerary_crud import get_itineraries_by_destination
-        itineraries = await get_itineraries_by_destination(destination, limit+offset)
-        paginated = itineraries[offset:offset+limit]
-        return APIResponse(
-            success=True,
-            message=f"Retrieved {len(paginated)} itineraries for {destination}",
-            data=paginated
-        )
-    except Exception as e:
-        import traceback
-        logger.error(f"Error retrieving itineraries: {str(e)}\n{traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve itineraries")
-    
 @router.get("/history")
 async def get_user_itinerary_history(
     userid: str = Query(..., description="User ID from Clerk authentication"),
@@ -112,7 +93,6 @@ async def get_user_itinerary_history(
     Get recent itinerary history for a specific user
     """
     try:
-        from db.itinerary_crud import get_recent_itineraries_by_user
         history = await get_recent_itineraries_by_user(userid, limit)
         
         return APIResponse(
@@ -124,3 +104,62 @@ async def get_user_itinerary_history(
     except Exception as e:
         logger.error(f"Error retrieving itinerary history for user {userid}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve itinerary history")
+    
+@router.get("/{itinerary_id}")
+async def get_itinerary_by_id(
+    itinerary_id: str,
+    userid: str = Query(..., description="User ID from Clerk authentication")
+):
+    """
+    Get a specific itinerary by its ID
+    """
+    try:
+        
+        itinerary = await get_itinerary_by_id(itinerary_id, userid)
+        
+        if not itinerary:
+            raise HTTPException(
+                status_code=404, 
+                detail="Itinerary not found or access denied"
+            )
+        
+        return APIResponse(
+            success=True,
+            message=f"Retrieved itinerary {itinerary_id}",
+            data=itinerary['itinerary_data']
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving itinerary {itinerary_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve itinerary")
+    
+
+@router.delete("/{itinerary_id}")
+async def delete_itinerary_endpoint(
+    itinerary_id: str,
+    userid: str = Query(..., description="User ID from Clerk authentication")
+):
+    """Delete a specific itinerary"""
+    try:
+        
+        success = await delete_itinerary(itinerary_id, userid)
+        
+        if success:
+            return APIResponse(
+                success=True,
+                message=f"Itinerary {itinerary_id} deleted successfully",
+                data=None
+            )
+        else:
+            raise HTTPException(
+                status_code=404,
+                detail="Itinerary not found or access denied"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting itinerary {itinerary_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to delete itinerary")

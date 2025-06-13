@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 import logging
 from datetime import datetime, UTC
 
@@ -19,17 +19,18 @@ async def search_hotels_restaurants(request: HotelRestaurantRequest):
     Search for hotels and restaurants using Gemini agent and SerpAPI
     """
     try:
-        logger.info(f"Searching hotels and restaurants for {request.destination}")
+        logger.info(f"Searching hotels and restaurants for {request.destination} for user {request.userid}")
         
         # Check for cached results
         cached_results = await get_hotels_restaurants_by_params(
             request.destination,
             request.theme,
-            request.hotel_rating
+            request.hotel_rating,
+            request.userid
         )
         
         if cached_results:
-            logger.info("Returning cached hotel/restaurant results")
+            logger.info(f"Returning cached hotel/restaurant results for user {request.userid}")
             return APIResponse(
                 success=True,
                 message="Search completed (cached)",
@@ -59,8 +60,9 @@ async def search_hotels_restaurants(request: HotelRestaurantRequest):
             "theme": request.theme,
             "activity_preferences": request.activity_preferences,
             "hotel_rating": request.hotel_rating,
+            "userid": request.userid,
             "search_results": search_results,
-            "timestamp":datetime.now(UTC).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "agent_version": "gemini-2.5-flash-preview-04-17"
         }
         
@@ -75,14 +77,18 @@ async def search_hotels_restaurants(request: HotelRestaurantRequest):
     except Exception as e:
         logger.error(f"Hotel/restaurant search error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
-
+    
 @router.get("/destination/{destination}/history")
-async def get_search_history(destination: str, limit: int = 5):
+async def get_search_history(
+    destination: str, 
+    userid: str = Query(..., description="User ID from Clerk authentication"),
+    limit: int = Query(5, ge=1, le=50, description="Number of records to return")
+):
     """
     Get search history for hotels and restaurants by destination
     """
     try:        
-        history = await get_search_history_by_destination(destination, limit)
+        history = await get_search_history_by_destination(destination, userid, limit)
         
         return APIResponse(
             success=True,

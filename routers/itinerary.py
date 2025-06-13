@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 import logging
 from datetime import datetime, UTC
 
@@ -22,6 +22,7 @@ async def generate_itinerary(request: ItineraryRequest):
             request.destination,
             request.theme,
             request.num_days,
+            request.userid,
             hours_threshold=24
         )
         
@@ -45,9 +46,6 @@ async def generate_itinerary(request: ItineraryRequest):
             hotel_rating=request.hotel_rating.value if hasattr(request.hotel_rating, "value") else str(request.hotel_rating),
             visa_required=request.visa_required,
             insurance_required=request.insurance_required,
-            research_summary=request.research_summary,
-            selected_flights=request.selected_flights,
-            hotel_restaurant_summary=request.hotel_restaurant_summary
         )
         
         if not itinerary_data:
@@ -58,6 +56,7 @@ async def generate_itinerary(request: ItineraryRequest):
             )
         
         # Save to database
+        # Add userid to itinerary_record:
         itinerary_record = {
             "destination": request.destination,
             "theme": request.theme,
@@ -68,9 +67,7 @@ async def generate_itinerary(request: ItineraryRequest):
             "hotel_rating": request.hotel_rating,
             "visa_required": request.visa_required,
             "insurance_required": request.insurance_required,
-            "research_summary": request.research_summary,
-            "selected_flights": request.selected_flights,
-            "hotel_restaurant_summary": request.hotel_restaurant_summary,
+            "userid": request.userid,  # Add this line
             "itinerary_data": itinerary_data,
             "timestamp": datetime.now(UTC).isoformat(),
             "agent_version": "gemini-2.5-flash-preview-04-17"
@@ -131,3 +128,25 @@ async def get_itinerary_by_id(itinerary_id: str):
     except Exception as e:
         logger.error(f"Error retrieving itinerary: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve itinerary")
+    
+@router.get("/history")
+async def get_user_itinerary_history(
+    userid: str = Query(..., description="User ID from Clerk authentication"),
+    limit: int = Query(10, ge=1, le=100, description="Number of records to return")
+):
+    """
+    Get recent itinerary history for a specific user
+    """
+    try:
+        from db.itinerary_crud import get_recent_itineraries_by_user
+        history = await get_recent_itineraries_by_user(userid, limit)
+        
+        return APIResponse(
+            success=True,
+            message=f"Retrieved {len(history)} itinerary records for user {userid}",
+            data=history
+        )
+        
+    except Exception as e:
+        logger.error(f"Error retrieving itinerary history for user {userid}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve itinerary history")

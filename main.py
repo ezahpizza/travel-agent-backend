@@ -11,11 +11,20 @@ from db.connection import init_db, close_db
 # Load environment variables
 load_dotenv()
 
-app = FastAPI(
+# Initialize database connection
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if os.environ.get("ENV") != "test":
+        await init_db()
+    yield
+    if os.environ.get("ENV") != "test":
+        close_db()
+
+app = FastAPI(    
     title="AI Travel Planner API",
     description="Production-ready FastAPI backend for AI-powered travel planning",
-    version="1.0.0"
-)
+    version="1.0.0",
+    lifespan=lifespan)
 
 # CORS middleware
 app.add_middleware(
@@ -25,16 +34,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    if os.environ.get("ENV") != "test":
-        await init_db()
-    yield
-    if os.environ.get("ENV") != "test":
-        close_db()
-
-app = FastAPI(lifespan=lifespan)
 
 # Include routers
 app.include_router(flights.router, prefix="/flights", tags=["flights"])

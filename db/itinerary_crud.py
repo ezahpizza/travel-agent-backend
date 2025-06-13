@@ -2,7 +2,6 @@ import logging
 from datetime import datetime, timedelta, UTC
 from typing import List, Dict, Any, Optional
 from pymongo.errors import PyMongoError
-import traceback
 
 from db.connection import get_db
 from utils.serialization_utils import serialize_for_mongo, log_exception
@@ -17,6 +16,7 @@ async def save_itinerary(itinerary_data: Dict[str, Any]) -> str:
 
         # Ensure all datetime fields are ISO strings
         itinerary_data["created_timestamp"] = datetime.now(UTC).isoformat()
+        itinerary_data["userid"] = str(itinerary_data.get("userid", ""))
         # Serialize all data for MongoDB
         mongo_data = serialize_for_mongo(itinerary_data)
         result = collection.insert_one(mongo_data)
@@ -48,7 +48,7 @@ async def get_itinerary_by_id(itinerary_id: str) -> Optional[Dict[str, Any]]:
         return None
 
 async def get_itineraries_by_params(destination: str, theme: str, num_days: int,
-                                  hours_threshold: int = 24) -> Optional[Dict[str, Any]]:
+                                  userid: str, hours_threshold: int = 24) -> Optional[Dict[str, Any]]:
     """Get cached itinerary if recent enough"""
     try:
         db = get_db()
@@ -62,7 +62,8 @@ async def get_itineraries_by_params(destination: str, theme: str, num_days: int,
             "destination": destination.title(),
             "theme": theme,
             "num_days": num_days,
-            "created_timestamp": {"$gte": threshold_time.isoformat()}
+            "created_timestamp": {"$gte": threshold_time.isoformat()},
+            "userid": str(userid)
         }
         result = collection.find_one(query, sort=[("created_timestamp", -1)])
         if result:
@@ -109,6 +110,41 @@ async def get_itineraries_by_destination(destination: str, limit: int = 10) -> L
         return []
     except Exception as e:
         logger.error(f"Error retrieving itineraries by destination: {e}")
+        return []
+
+async def get_recent_itineraries_by_user(userid: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """Get recent itineraries for a specific user"""
+    try:
+        db = get_db()
+        collection = db.itineraries
+        
+        cursor = collection.find(
+            {"userid": str(userid)},
+            {
+                "destination": 1,
+                "theme": 1,
+                "num_days": 1,
+                "budget": 1,
+                "flight_class": 1,
+                "hotel_rating": 1,
+                "created_timestamp": 1,
+                "metadata.total_activities": 1,
+                "metadata.estimated_cost": 1
+            }
+        ).sort("created_timestamp", -1).limit(limit)
+        
+        results = []
+        for doc in cursor:
+            doc['_id'] = str(doc['_id'])
+            results.append(doc)
+            
+        return results
+        
+    except PyMongoError as e:
+        logger.error(f"Database error retrieving user itineraries: {e}")
+        return []
+    except Exception as e:
+        logger.error(f"Error retrieving user itineraries: {e}")
         return []
 
 async def get_recent_itineraries(limit: int = 10) -> List[Dict[str, Any]]:

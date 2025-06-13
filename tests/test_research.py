@@ -49,7 +49,8 @@ def test_research_validation(monkeypatch):
 #         "flight_class": "Economy",
 #         "hotel_rating": "Any",
 #         "visa_required": False,
-#         "insurance_required": False
+#         "insurance_required": False,
+#         "userid": "test-user"
 #     }
 #     response = client.post("/research/destination", json=payload)
 #     assert response.status_code == 200

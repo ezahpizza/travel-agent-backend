@@ -35,7 +35,8 @@ def test_search_flights_validation():
 #         "source": "DEL",
 #         "destination": "BOM",
 #         "departure_date": "2025-07-01",
-#         "return_date": "2025-07-10"
+#         "return_date": "2025-07-10",
+#         "userid": "test-user"
 #     }
 #     response = client.post("/flights/search", json=payload)
 #     assert response.status_code == 200

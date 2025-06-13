@@ -47,9 +47,6 @@ class ItineraryService:
         hotel_rating: str,
         visa_required: bool,
         insurance_required: bool,
-        research_summary: str,
-        selected_flights: List[Dict[str, Any]],
-        hotel_restaurant_summary: str
     ) -> Dict[str, Any]:
         """
         Generate a comprehensive travel itinerary using all provided information
@@ -58,8 +55,7 @@ class ItineraryService:
             # Build comprehensive prompt with all data
             prompt = self._build_itinerary_prompt(
                 destination, theme, activities, num_days, budget, flight_class,
-                hotel_rating, visa_required, insurance_required, research_summary,
-                selected_flights, hotel_restaurant_summary
+                hotel_rating, visa_required, insurance_required
             )
             
             logger.info(f"Generating {num_days}-day itinerary for {destination}")
@@ -90,8 +86,14 @@ class ItineraryService:
             )
             
             return {
+                "destination": destination,
+                "total_days": num_days,
+                "theme": theme,
+                "daily_plans": processed_itinerary.get("daily_breakdown", []),
+                "total_estimated_cost": f"${budget} Budget Level",
+                "travel_tips": processed_itinerary.get("practical_tips", []),
+                "packing_suggestions": self._extract_packing_suggestions(result.content),
                 "itinerary": result.content,
-                "daily_breakdown": processed_itinerary.get("daily_breakdown", []),
                 "summary": {
                     "destination": destination,
                     "duration": num_days,
@@ -105,15 +107,11 @@ class ItineraryService:
                 "practical_info": {
                     "visa_required": visa_required,
                     "insurance_required": insurance_required,
-                    "recommended_flights": selected_flights,
                     "budget_level": budget
                 },
                 "metadata": {
                     "generation_successful": True,
                     "generation_timestamp": datetime.now(UTC).isoformat(),
-                    "input_data_quality": self._assess_input_quality(
-                        research_summary, selected_flights, hotel_restaurant_summary
-                    )
                 }
             }
             
@@ -144,24 +142,11 @@ class ItineraryService:
         flight_class: str,
         hotel_rating: str,
         visa_required: bool,
-        insurance_required: bool,
-        research_summary: str,
-        selected_flights: List[Dict[str, Any]],
-        hotel_restaurant_summary: str
+        insurance_required: bool
     ) -> str:
         """
         Build comprehensive prompt for itinerary generation
         """
-        # Format flight information
-        flight_info = "No flight information provided"
-        if selected_flights:
-            flight_details = []
-            for flight in selected_flights[:3]:  # Use top 3 flights
-                flight_details.append(f"- {flight.get('airline', 'Unknown')} "
-                                    f"({flight.get('price', 'N/A')}) - "
-                                    f"Departure: {flight.get('departure_time', 'N/A')}")
-            flight_info = "\n".join(flight_details)
-        
         # Build the comprehensive prompt
         prompt = f"""
         Create a detailed {num_days}-day itinerary for a {theme.lower()} trip to {destination}.
@@ -174,15 +159,6 @@ class ItineraryService:
         - Hotel Rating Preference: {hotel_rating}
         - Visa Required: {"Yes" if visa_required else "No"}
         - Travel Insurance: {"Required" if insurance_required else "Optional"}
-        
-        RESEARCH DATA:
-        {research_summary if research_summary else "No destination research provided"}
-        
-        FLIGHT OPTIONS:
-        {flight_info}
-        
-        HOTEL & RESTAURANT RECOMMENDATIONS:
-        {hotel_restaurant_summary if hotel_restaurant_summary else "No hotel/restaurant recommendations provided"}
         
         ITINERARY REQUIREMENTS:
         1. Create a day-by-day schedule for all {num_days} days
@@ -229,17 +205,19 @@ class ItineraryService:
             # Split content into days
             daily_sections = self._extract_daily_sections(content, num_days)
             
-            for day_num, day_content in daily_sections.items():
+            for day_num in range(1, num_days + 1):
+                day_content = daily_sections.get(day_num, "")
+                activities = self._extract_activities_from_day(day_content)
+                
                 day_data = {
                     "day": day_num,
-                    "activities": self._extract_activities_from_day(day_content),
-                    "meals": self._extract_meals_from_day(day_content),
-                    "transportation": self._extract_transportation_from_day(day_content),
-                    "tips": self._extract_tips_from_day(day_content)
+                    "theme": f"Day {day_num} - {theme}",
+                    "activities": activities,
+                    "estimated_cost": "Varies"
                 }
                 result["daily_breakdown"].append(day_data)
             
-            # Extract overall activities and restaurants mentioned
+            # Extract overall data
             result["activities"] = self._extract_all_activities(content)
             result["restaurants"] = self._extract_all_restaurants(content)
             result["practical_tips"] = self._extract_practical_tips(content)
@@ -292,17 +270,31 @@ class ItineraryService:
         lines = day_content.split('\n')
         
         for line in lines:
-            # Look for time patterns (e.g., "9:00 AM", "2:30 PM")
+            line = line.strip()
+            if not line:
+                continue
+                
+            # Look for time patterns and activities
             if any(time_indicator in line.lower() for time_indicator in ['am', 'pm', ':']):
-                if any(activity_word in line.lower() for activity_word in 
-                       ['visit', 'explore', 'tour', 'museum', 'temple', 'market', 'park']):
-                    activities.append({
-                        "time": self._extract_time_from_line(line),
-                        "activity": line.strip(),
-                        "type": "attraction"
-                    })
+                activities.append({
+                    "time": self._extract_time_from_line(line),
+                    "activity": line,
+                    "location": self._extract_location_from_line(line),
+                    "duration": "",
+                    "cost_estimate": "",
+                    "notes": ""
+                })
         
         return activities
+
+    def _extract_location_from_line(self, line: str) -> str:
+        """Extract location information from a line"""
+        # Look for location indicators
+        if ' at ' in line.lower():
+            parts = line.lower().split(' at ')
+            if len(parts) > 1:
+                return parts[1].split(',')[0].strip().title()
+        return ""
 
     def _extract_meals_from_day(self, day_content: str) -> List[Dict[str, str]]:
         """Extract meal recommendations from a day's content"""
@@ -403,31 +395,19 @@ class ItineraryService:
                 tips.append(line.strip())
         
         return tips
-
-    def _assess_input_quality(
-        self, 
-        research_summary: str, 
-        selected_flights: List[Dict], 
-        hotel_restaurant_summary: str
-    ) -> Dict[str, Any]:
-        """
-        Assess the quality of input data for metadata
-        """
-        return {
-            "has_research": bool(research_summary and len(research_summary) > 50),
-            "has_flights": bool(selected_flights),
-            "flight_count": len(selected_flights) if selected_flights else 0,
-            "has_hotel_restaurant_data": bool(hotel_restaurant_summary and len(hotel_restaurant_summary) > 50),
-            "overall_quality": "high" if all([
-                research_summary and len(research_summary) > 50,
-                selected_flights,
-                hotel_restaurant_summary and len(hotel_restaurant_summary) > 50
-            ]) else "medium" if any([
-                research_summary and len(research_summary) > 50,
-                selected_flights,
-                hotel_restaurant_summary and len(hotel_restaurant_summary) > 50
-            ]) else "low"
-        }
+    
+    def _extract_packing_suggestions(self, content: str) -> List[str]:
+        """Extract packing suggestions from the entire itinerary"""
+        suggestions = []
+        lines = content.split('\n')
+        
+        for line in lines:
+            line_lower = line.lower()
+            if any(pack_word in line_lower for pack_word in 
+                ['pack', 'bring', 'carry', 'essential', 'clothing', 'gear']):
+                suggestions.append(line.strip())
+        
+        return suggestions[:10]  # Limit to 10 suggestions
 
     async def optimize_itinerary(
         self, 

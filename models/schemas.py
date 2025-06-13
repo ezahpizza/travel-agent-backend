@@ -25,6 +25,7 @@ class FlightSearchRequest(BaseModel):
     destination: str = Field(..., description="Arrival airport IATA code", min_length=3, max_length=3)
     departure_date: date = Field(..., description="Departure date")
     return_date: date = Field(..., description="Return date")
+    userid: str = Field(..., description="User ID from Clerk authentication")
     
     @field_validator('source', 'destination')
     @classmethod
@@ -62,10 +63,10 @@ class ResearchRequest(BaseModel):
     hotel_rating: HotelRating
     visa_required: bool = False
     insurance_required: bool = False
+    userid: str = Field(..., description="User ID from Clerk authentication")
 
 class ResearchResponse(BaseModel):
     destination: str
-    research_summary: str
     attractions: List[str]
     recommendations: List[str]
     safety_tips: List[str]
@@ -77,6 +78,7 @@ class HotelRestaurantRequest(BaseModel):
     activity_preferences: str = Field(..., description="Activity preferences")
     hotel_rating: HotelRating
     budget: str
+    userid: str = Field(..., description="User ID from Clerk authentication")
 
 class HotelInfo(BaseModel):
     name: str
@@ -104,9 +106,7 @@ class ItineraryRequest(BaseModel):
     hotel_rating: HotelRating
     visa_required: bool = False
     insurance_required: bool = False
-    research_summary: str
-    selected_flights: List[Dict[str, Any]]
-    hotel_restaurant_summary: str
+    userid: str = Field(..., description="User ID from Clerk authentication")
 
 class DayActivity(BaseModel):
     time: str

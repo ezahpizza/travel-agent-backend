@@ -48,9 +48,7 @@ def test_generate_itinerary_success(monkeypatch):
         "hotel_rating": "Any",
         "visa_required": False,
         "insurance_required": False,
-        "research_summary": "Some research",
-        "selected_flights": [],
-        "hotel_restaurant_summary": "Some summary"
+        "userid": "test-user"
     }
     response = client.post("/itinerary/generate", json=payload)
     assert response.status_code == 200

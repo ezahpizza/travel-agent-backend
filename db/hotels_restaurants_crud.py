@@ -15,6 +15,7 @@ async def save_hotels_restaurants_search(search_data: Dict[str, Any]) -> str:
         
         # Ensure all datetime fields are ISO strings
         search_data["search_timestamp"] = datetime.now(UTC).isoformat()
+        search_data["userid"] = str(search_data.get("userid", ""))
         
         result = collection.insert_one(search_data)
         logger.info(f"Hotels & restaurants search saved with ID: {result.inserted_id}")
@@ -28,7 +29,7 @@ async def save_hotels_restaurants_search(search_data: Dict[str, Any]) -> str:
         raise
 
 async def get_hotels_restaurants_by_params(destination: str, theme: str, hotel_rating: str, 
-                                         hours_threshold: int = 6) -> Optional[Dict[str, Any]]:
+                                         userid: str, hours_threshold: int = 6) -> Optional[Dict[str, Any]]:
     """Get cached hotels and restaurants search results if recent enough"""
     try:
         db = get_db()
@@ -41,6 +42,7 @@ async def get_hotels_restaurants_by_params(destination: str, theme: str, hotel_r
             "destination": destination.title(),
             "theme": theme,
             "hotel_rating": hotel_rating,
+            "userid": str(userid),
             "search_timestamp": {"$gte": threshold_time.isoformat()}
         }
         
@@ -48,7 +50,7 @@ async def get_hotels_restaurants_by_params(destination: str, theme: str, hotel_r
         
         if result:
             result['_id'] = str(result['_id'])
-            logger.info(f"Found cached hotels & restaurants search for {destination}")
+            logger.info(f"Found cached hotels & restaurants search for {destination} for user {userid}")
             return result
             
         return None
@@ -243,13 +245,16 @@ async def get_hotels_restaurants_stats() -> Dict[str, Any]:
         logger.error(f"Error getting hotels & restaurants stats: {e}")
         return {}
     
-async def get_search_history_by_destination(destination: str, limit: int = 5) -> List[Dict[str, Any]]:
+async def get_search_history_by_destination(destination: str, userid: str, limit: int = 5) -> List[Dict[str, Any]]:
     """Get search history for hotels and restaurants by destination"""
     try:
         db = get_db()
         collection = db.hotels_restaurants
         
-        query = {"destination": destination.title()}
+        query = {
+            "destination": destination.title(),
+            "userid": str(userid)
+        }
         
         cursor = collection.find(
             query,
@@ -269,7 +274,7 @@ async def get_search_history_by_destination(destination: str, limit: int = 5) ->
             doc['_id'] = str(doc['_id'])
             results.append(doc)
             
-        logger.info(f"Retrieved {len(results)} search history records for {destination}")
+        logger.info(f"Retrieved {len(results)} search history records for {destination} for user {userid}")
         return results
         
     except PyMongoError as e:

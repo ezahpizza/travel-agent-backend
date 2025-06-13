@@ -114,11 +114,11 @@ class ResearchService:
             attractions = self._extract_attractions(content)
             recommendations = self._extract_recommendations(content)
             safety_tips = self._extract_safety_tips(content)
+
             
             return {
                 "destination": request.destination,
                 "theme": request.theme,
-                "research_summary": content,
                 "attractions": attractions,
                 "recommendations": recommendations,
                 "safety_tips": safety_tips,
@@ -132,7 +132,6 @@ class ResearchService:
             return {
                 "destination": request.destination,
                 "theme": request.theme,
-                "research_summary": content,
                 "attractions": [],
                 "recommendations": [],
                 "safety_tips": []

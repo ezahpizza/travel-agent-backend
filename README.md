@@ -1,4 +1,4 @@
-# AI Travel Planner Backend
+# Navite Backend
 
 This is a production-ready FastAPI backend for an AI-powered travel planning application. It integrates with Google Gemini, SerpAPI, and MongoDB to provide intelligent travel research, flight search, hotel and restaurant recommendations, and itinerary generation.
 
@@ -145,6 +145,50 @@ This is a production-ready FastAPI backend for an AI-powered travel planning app
     - `limit` (int): Number of records to return (default: 10)
   - **Response:**
     - List of recent itineraries for the user.
+
+---
+
+### Subscription & Paywall (`/subscription`)
+
+- **GET `/subscription/status`**
+  - Get the current subscription plan and POST usage for a user.
+  - **Query Parameters:**
+    - `userid` (str): User ID from Clerk authentication
+  - **Response:**
+    - `plan` (str): "basic" or "paid"
+    - `usage_this_month` (int): Number of POST calls this month
+
+- **POST `/subscription/create-session`**
+  - Create a Stripe Checkout session for the paid plan (dev/test mode supported).
+  - **Request Body:**
+    - `userid` (str): User ID from Clerk authentication
+    - `success_url` (str): URL to redirect after successful payment (should include `session_id` as a query param)
+    - `cancel_url` (str): URL to redirect if payment is cancelled
+  - **Response:**
+    - `session` (object): Stripe Checkout session object (use `session.url` to redirect user)
+
+- **POST `/subscription/verify-payment`**
+  - Verify a Stripe payment and activate the paid plan for the user.
+  - **Request Body:**
+    - `userid` (str): User ID from Clerk authentication
+    - `session_id` (str): Stripe Checkout session ID
+  - **Response:**
+    - `{ "success": true }` on success
+
+#### Paywall Enforcement
+- All POST endpoints for core services (e.g., `/flights/search`, `/itinerary/generate`, etc.) are rate-limited for free users (15 POSTs/month). Paid users have unlimited access. GET endpoints are always unlimited.
+- If a free user exceeds their POST limit, a 429 error is returned:
+  ```json
+  {
+    "success": false,
+    "message": "Free plan limit reached (15 POST calls/month). Please upgrade.",
+    "data": null
+  }
+  ```
+
+#### Subscription Plans
+- **Basic Explorer (Free):** 15 POST API calls/month, unlimited GET calls.
+- **Travel Master (Paid):** Unlimited POST/GET calls. $1.99/month (USD, Stripe test mode supported).
 
 ## Error Handling
 - All endpoints return a consistent JSON structure:

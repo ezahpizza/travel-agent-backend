@@ -1,4 +1,4 @@
-import os
+from config import settings
 import logging
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
@@ -14,8 +14,8 @@ async def init_db():
     global db_client, database
     
     try:
-        mongo_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-        db_name = os.getenv("DATABASE_NAME", "travel_planner")
+        mongo_url = settings.MONGODB_URL
+        db_name = settings.DATABASE_NAME
         
         db_client = MongoClient(mongo_url)
         # Test connection
@@ -33,7 +33,7 @@ async def init_db():
 
 def get_db():
     """Return dummy db for testing or actual db if set."""
-    if os.getenv("ENV") == "test":
+    if settings.ENV == "test":
         class DummyInsertResult:
             @property
             def inserted_id(self):

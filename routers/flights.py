@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 import logging
 from datetime import datetime, UTC
+from dependencies.paywall import paywall_dependency
 
 from models.schemas import FlightSearchRequest, APIResponse
 from services.flights_service import FlightService
@@ -9,7 +10,7 @@ from db.flights_crud import save_flight_search, get_flight_search_by_params, get
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-@router.post("/search", response_model=APIResponse)
+@router.post("/search", response_model=APIResponse, dependencies=[Depends(paywall_dependency)])
 async def search_flights(request: FlightSearchRequest):
     """
     Search for flights using SerpAPI and return top 3 cheapest options
@@ -95,4 +96,3 @@ async def get_search_history(
     except Exception as e:
         logger.error(f"Error retrieving search history for user {userid}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve search history")
-    

@@ -1,4 +1,4 @@
-import os
+from config import settings
 import re
 import logging
 from typing import Dict, Any, List
@@ -10,11 +10,9 @@ logger = logging.getLogger(__name__)
 
 class ItineraryService:
     def __init__(self):
-        self.google_api_key = os.getenv("GOOGLE_API_KEY")
-        
+        self.google_api_key = settings.GOOGLE_API_KEY
         if not self.google_api_key:
             raise ValueError("GOOGLE_API_KEY environment variable is required")
-        
         # Initialize the planning agent
         self.planner = Agent(
             name="Travel Itinerary Planner",
@@ -32,7 +30,7 @@ class ItineraryService:
                 "Integrate recommended hotels and restaurants from previous research",
                 "Provide estimated costs and booking information where relevant"
             ],
-            model=Gemini(id="gemini-2.5-flash-preview-04-17"),
+            model=Gemini(id=settings.GEMINI_MODEL),
             add_datetime_to_instructions=True,
         )
 

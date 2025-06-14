@@ -1,4 +1,4 @@
-import os
+from config import settings
 import logging
 from typing import Dict, Any, Optional
 from agno.agent import Agent
@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 class ResearchService:
     def __init__(self):
-        self.api_key = os.getenv("SERPAPI_API_KEY")
-        self.google_api_key = os.getenv("GOOGLE_API_KEY")
+        self.api_key = settings.SERPAPI_API_KEY
+        self.google_api_key = settings.GOOGLE_API_KEY
         
         if not self.api_key:
             raise ValueError("SERPAPI_API_KEY environment variable is required")
@@ -43,7 +43,7 @@ class ResearchService:
                 "Structure your response with clear sections and actionable recommendations.",
                 "Focus on practical, up-to-date information that helps with trip planning."
             ],
-            model=Gemini(id="gemini-2.5-flash-preview-04-17"),
+            model=Gemini(id=settings.GEMINI_MODEL),
             tools=[SerpApiTools(api_key=self.api_key)],
             add_datetime_to_instructions=True,
         )

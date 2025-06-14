@@ -5,8 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
 
-from routers import flights, research, hotels_restaurants, itinerary
+from routers import flights, research, hotels_restaurants, itinerary, subscription
 from db.connection import init_db, close_db
+from config import settings
 
 # Load environment variables
 load_dotenv()
@@ -24,12 +25,14 @@ app = FastAPI(
     title="AI Travel Planner API",
     description="Production-ready FastAPI backend for AI-powered travel planning",
     version="1.0.0",
-    lifespan=lifespan)
+    lifespan=lifespan,
+    debug=settings.DEBUG
+)
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=[settings.CORS_ORIGINS] if settings.CORS_ORIGINS else ["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -40,6 +43,7 @@ app.include_router(flights.router, prefix="/flights", tags=["flights"])
 app.include_router(research.router, prefix="/research", tags=["research"])
 app.include_router(hotels_restaurants.router, prefix="/hotels-restaurants", tags=["hotels-restaurants"])
 app.include_router(itinerary.router, prefix="/itinerary", tags=["itinerary"])
+app.include_router(subscription.router, prefix="/subscription", tags=["subscription"])
 
 @app.get("/")
 async def root():

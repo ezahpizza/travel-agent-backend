@@ -1,4 +1,4 @@
-import os
+from config import settings
 import logging
 from typing import Dict, Any
 from agno.agent import Agent
@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 class HotelsRestaurantsService:
     def __init__(self):
-        self.google_api_key = os.getenv("GOOGLE_API_KEY")
-        self.serpapi_key = os.getenv("SERPAPI_API_KEY")
+        self.google_api_key = settings.GOOGLE_API_KEY
+        self.serpapi_key = settings.SERPAPI_API_KEY
         
         if not self.google_api_key:
             raise ValueError("GOOGLE_API_KEY environment variable is required")
@@ -33,7 +33,7 @@ class HotelsRestaurantsService:
                 "If specific preferences aren't found, suggest similar alternatives",
                 "Include practical information like booking websites or contact details when available"
             ],
-            model=Gemini(id="gemini-2.5-flash-preview-04-17"),
+            model=Gemini(id=settings.GEMINI_MODEL),
             tools=[SerpApiTools(api_key=self.serpapi_key)],
             add_datetime_to_instructions=True,
         )

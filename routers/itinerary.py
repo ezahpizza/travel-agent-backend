@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 import logging
 from datetime import datetime, UTC
+from dependencies.paywall import paywall_dependency
 
 from models.schemas import ItineraryRequest, APIResponse
 from services.itinerary_service import ItineraryService
@@ -9,7 +10,7 @@ from db.itinerary_crud import save_itinerary, get_itineraries_by_params, get_rec
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-@router.post("/generate", response_model=APIResponse)
+@router.post("/generate", response_model=APIResponse, dependencies=[Depends(paywall_dependency)])
 async def generate_itinerary(request: ItineraryRequest):
     """
     Generate a complete travel itinerary using Gemini agent

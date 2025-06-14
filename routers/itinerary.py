@@ -1,11 +1,21 @@
-from fastapi import APIRouter, HTTPException, Query, Depends
+# Standard Library Imports
 import logging
 from datetime import datetime, UTC
-from dependencies.paywall import paywall_dependency
 
+# Third-Party Imports
+from fastapi import APIRouter, HTTPException, Query, Depends
+
+# Application-Specific Imports
+from dependencies.paywall import paywall_dependency
 from models.schemas import ItineraryRequest, APIResponse
 from services.itinerary_service import ItineraryService
-from db.itinerary_crud import save_itinerary, get_itineraries_by_params, get_recent_itineraries_by_user, get_itinerary_by_id, delete_itinerary
+from db.itinerary_crud import (
+    save_itinerary,
+    get_itineraries_by_params,
+    get_recent_itineraries_by_user,
+    get_itinerary_by_id,
+    delete_itinerary,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

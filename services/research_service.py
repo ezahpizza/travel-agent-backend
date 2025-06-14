@@ -1,10 +1,14 @@
-from config import settings
+#  Standard Library Imports
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional  # Typing hints from standard library
+
+#  Third-Party/External Library Imports
 from agno.agent import Agent
 from agno.tools.serpapi import SerpApiTools
 from agno.models.google import Gemini
 
+#  Application-Specific (Local) Imports
+from config import settings
 from models.schemas import ResearchRequest
 
 logger = logging.getLogger(__name__)

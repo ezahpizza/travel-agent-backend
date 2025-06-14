@@ -1,8 +1,12 @@
-from fastapi import APIRouter, HTTPException, Query, Depends
+# Standard Library Imports
 import logging
 from datetime import datetime, UTC
 from dependencies.paywall import paywall_dependency
 
+# Third-Party Imports
+from fastapi import APIRouter, HTTPException, Query, Depends
+
+# Application-Specific Imports
 from models.schemas import FlightSearchRequest, APIResponse
 from services.flights_service import FlightService
 from db.flights_crud import save_flight_search, get_flight_search_by_params, get_recent_flight_searches

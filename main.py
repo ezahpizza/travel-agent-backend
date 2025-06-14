@@ -1,13 +1,17 @@
+#standard library imports
+import os
 from contextlib import asynccontextmanager
 
+# Third-party imports
+from dotenv import load_dotenv
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import os
-from dotenv import load_dotenv
 
-from routers import flights, research, hotels_restaurants, itinerary, subscription
-from db.connection import init_db, close_db
+# Local application imports
 from config import settings
+from db.connection import init_db, close_db
+from routers import flights, research, hotels_restaurants, itinerary, subscription
 
 # Load environment variables
 load_dotenv()
@@ -54,5 +58,5 @@ async def health_check():
     return {"status": "healthy"}
 
 if __name__ == "__main__":
-    import uvicorn
+    
     uvicorn.run(app, host="0.0.0.0", port=8000)

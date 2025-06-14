@@ -1,10 +1,18 @@
-from fastapi import APIRouter, HTTPException
+# Standard Library Imports
 import logging
 from datetime import datetime, UTC
 
+# Third-PartyImports
+from fastapi import APIRouter, HTTPException
+
+# Application-Specific Imports
 from models.schemas import ResearchRequest, APIResponse
 from services.research_service import ResearchService
-from db.research_crud import save_research_result, get_research_by_destination, get_research_history_by_destination
+from db.research_crud import (
+    save_research_result,
+    get_research_by_destination,
+    get_research_history_by_destination,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

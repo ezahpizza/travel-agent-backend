@@ -1,7 +1,11 @@
-from fastapi import APIRouter, HTTPException, Query
+# Standard Library Imports
 import logging
 from datetime import datetime, UTC
 
+# Third-Party Imports
+from fastapi import APIRouter, HTTPException, Query
+
+# Application-Specific Imports
 from models.schemas import HotelRestaurantRequest, APIResponse
 from services.hotels_restaurants_service import HotelsRestaurantsService
 from db.hotels_restaurants_crud import (

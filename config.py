@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     ENV: Optional[str] = Field("dev", env="ENV")
     DEBUG: bool = Field(False, env="DEBUG")
     # Example: CORS origins
-    CORS_ORIGINS: Optional[str] = Field("*", env="CORS_ORIGINS")
+    CORS_ORIGINS: str = Field(..., env="CORS_ORIGINS")
 
     class Config:
         env_file = ".env"

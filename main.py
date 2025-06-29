@@ -36,7 +36,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.CORS_ORIGINS] if settings.CORS_ORIGINS else ["*"],  
+    allow_origins=[settings.CORS_ORIGINS],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,4 +55,12 @@ async def root():
 
 @app.get("/health")
 async def health_check():
+<<<<<<< HEAD
     return {"status": "healthy"}
+=======
+    return {"status": "healthy"}
+
+if __name__ == "__main__":
+    
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+>>>>>>> c85445de83ee5203cc40632b739f5725e8f6039b
